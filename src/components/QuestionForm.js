@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 
-function QuestionForm(props) {
+// Accept the state handlers as props
+function QuestionForm({ onAddQuestion, onChangePage }) {
   const [formData, setFormData] = useState({
     prompt: "",
     answer1: "",
     answer2: "",
     answer3: "",
     answer4: "",
-    correctIndex: 0,
+    correctIndex: "0", // Must be a string to match select value
   });
 
   function handleChange(event) {
@@ -19,7 +20,34 @@ function QuestionForm(props) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+    
+    // Format the data for the API (POST /questions)
+    const newQuestionData = {
+      prompt: formData.prompt,
+      answers: [
+        formData.answer1,
+        formData.answer2,
+        formData.answer3,
+        formData.answer4,
+      ],
+      correctIndex: parseInt(formData.correctIndex), // Convert back to integer
+    };
+
+    fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newQuestionData),
+    })
+      .then((res) => res.json())
+      .then((newQuestion) => {
+        // 1. Update state in App component
+        onAddQuestion(newQuestion); 
+        // 2. Navigate back to the list view
+        onChangePage("List");
+      })
+      .catch(error => console.error("Error creating question:", error));
   }
 
   return (
@@ -71,17 +99,19 @@ function QuestionForm(props) {
             onChange={handleChange}
           />
         </label>
-        <label>
+        <label htmlFor="correctIndex">
           Correct Answer:
           <select
+            id="correctIndex"
             name="correctIndex"
             value={formData.correctIndex}
             onChange={handleChange}
           >
-            <option value="0">{formData.answer1}</option>
-            <option value="1">{formData.answer2}</option>
-            <option value="2">{formData.answer3}</option>
-            <option value="3">{formData.answer4}</option>
+            {/* Options must use index values as strings */}
+            <option value="0">{formData.answer1 || 'Answer 1'}</option>
+            <option value="1">{formData.answer2 || 'Answer 2'}</option>
+            <option value="2">{formData.answer3 || 'Answer 3'}</option>
+            <option value="3">{formData.answer4 || 'Answer 4'}</option>
           </select>
         </label>
         <button type="submit">Add Question</button>
